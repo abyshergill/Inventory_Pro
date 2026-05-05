@@ -1,0 +1,36 @@
+
+{% extends "base.html" %}
+{% block title %}Login – InventoryPro{% endblock %}
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card card">
+        <div class="card-body">
+            <div class="auth-icon login">
+                <i class="bi bi-lock-fill"></i>
+            </div>
+            <h3>Welcome back</h3>
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <input type="text" name="username" class="form-control"
+                           placeholder="Enter your username"
+                           required autofocus autocomplete="username">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="password" class="form-control"
+                           placeholder="Enter your password"
+                           required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary w-100 mt-2">
+                    <i class="bi bi-arrow-right-circle"></i> Sign In
+                </button>
+            </form>
+            <p class="text-center mt-3 mb-0" style="font-size:.875rem;color:var(--text-secondary);">
+                Contact an administrator if you need an account.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,134 @@
+
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if item else 'New' }} Item – InventoryPro{% endblock %}
+{% block content %}
+<div class="container" style="max-width:780px">
+    <div class="page-header">
+        <h2>
+            <i class="bi bi-{% if item %}pencil-square{% else %}plus-circle{% endif %}"></i>
+            {{ 'Edit' if item else 'New' }} Inventory Item
+        </h2>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="card mb-4">
+            <div class="card-header"><i class="bi bi-info-circle me-1"></i> Basic Info</div>
+            <div class="card-body row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Name <span class="text-danger">*</span></label>
+                    <input type="text" name="name" class="form-control" required
+                           placeholder="Item name"
+                           value="{{ item.name if item else '' }}">
+                    <div class="invalid-feedback">Name is required.</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">SKU</label>
+                    <input type="text" name="sku" class="form-control"
+                           placeholder="e.g. WDG-001"
+                           value="{{ item.sku if item else '' }}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Category</label>
+                    <input type="text" name="category" class="form-control"
+                           placeholder="General"
+                           value="{{ item.category if item else 'General' }}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Location</label>
+                    <input type="text" name="location" class="form-control"
+                           placeholder="e.g. Shelf A"
+                           value="{{ item.location if item else '' }}">
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" class="form-control"
+                              placeholder="Optional description…"
+                              rows="3">{{ item.description if item else '' }}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header"><i class="bi bi-graph-up me-1"></i> Stock &amp; Pricing</div>
+            <div class="card-body row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Quantity</label>
+                    <input type="number" name="quantity" class="form-control" min="0"
+                           value="{{ item.quantity if item else 0 }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">
+                        Min Quantity
+                        <i class="bi bi-info-circle"
+                           style="color:var(--text-muted);cursor:help;"
+                           title="Alert triggers when stock ≤ this value"></i>
+                    </label>
+                    <input type="number" name="min_quantity" class="form-control" min="0"
+                           value="{{ item.min_quantity if item else 0 }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Price ($)</label>
+                    <input type="number" name="price" class="form-control"
+                           step="0.01" min="0"
+                           value="{{ item.price if item else 0 }}">
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header"><i class="bi bi-image me-1"></i> Product Image</div>
+            <div class="card-body">
+                {% if item and item.image_path %}
+                <div class="mb-3">
+                    <img src="{{ url_for('static', filename=item.image_path) }}"
+                         alt="current" class="img-thumbnail" style="max-height:150px">
+                    <p style="font-size:.8rem;color:var(--text-muted);margin-top:.5rem;">
+                        Upload a new file to replace the current image.
+                    </p>
+                </div>
+                {% endif %}
+                <input type="file" name="image" class="form-control"
+                       accept=".png,.jpg,.jpeg,.gif,.webp">
+            </div>
+        </div>
+
+        {% if custom_columns|length > 0 %}
+        <div class="card mb-4">
+            <div class="card-header"><i class="bi bi-sliders me-1"></i> Custom Fields</div>
+            <div class="card-body row g-3">
+                {% for col in custom_columns %}
+                <div class="col-md-6">
+                    <label class="form-label">{{ col.column_name }}</label>
+                    {% if col.column_type == 'number' %}
+                    <input type="number" name="custom_{{ col.column_name }}"
+                           class="form-control" step="any"
+                           value="{{ item.custom_fields_parsed.get(col.column_name, '') if item else '' }}">
+                    {% elif col.column_type == 'date' %}
+                    <input type="date" name="custom_{{ col.column_name }}"
+                           class="form-control"
+                           value="{{ item.custom_fields_parsed.get(col.column_name, '') if item else '' }}">
+                    {% else %}
+                    <input type="text" name="custom_{{ col.column_name }}"
+                           class="form-control"
+                           value="{{ item.custom_fields_parsed.get(col.column_name, '') if item else '' }}">
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="d-flex gap-2 mb-4">
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-check-lg"></i>
+                {{ 'Update' if item else 'Create' }}
+            </button>
+            <a href="{{ url_for('inventory.list_items') }}" class="btn btn-outline-secondary">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

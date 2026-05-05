@@ -1,0 +1,75 @@
+
+{% extends "base.html" %}
+{% block title %}Manage Users – InventoryPro{% endblock %}
+{% block content %}
+<div class="container" style="max-width:1000px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-people-fill me-2 text-primary"></i> User Management</h2>
+        <a href="{{ url_for('users.create_user') }}" class="btn btn-primary shadow-sm">
+            <i class="bi bi-person-plus-fill"></i> Add New User
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-sm overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4 py-3">User</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Joined</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold">{{ u.username }}</div>
+                        </td>
+                        <td>{{ u.email }}</td>
+                        <td>
+                            <span class="badge rounded-pill
+                                {% if u.role == 'admin' %}bg-success
+                                {% elif u.role == 'editor' %}bg-primary
+                                {% else %}bg-secondary{% endif %}">
+                                {{ u.role }}
+                            </span>
+                        </td>
+                        <td class="text-muted small">
+                            {{ u.created_at }}
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('users.edit_user', user_id=u.id) }}"
+                                   class="btn btn-outline-secondary" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% if current_user.id != u.id %}
+                                <form action="{{ url_for('users.delete_user', user_id=u.id) }}"
+                                      method="POST" class="d-inline"
+                                      onsubmit="return confirm('Delete this user?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-outline-danger" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="bi bi-people d-block fs-1 mb-2 opacity-25"></i>
+                            No users found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,163 @@
+
+{% extends "base.html" %}
+{% block title %}Inventory – InventoryPro{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center page-header">
+        <h2><i class="bi bi-boxes"></i> Inventory</h2>
+        {% if can_edit %}
+        <a href="{{ url_for('inventory.create_item') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Item
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Search bar -->
+    <div class="search-wrapper mb-4">
+        <form method="GET" class="row g-2 align-items-end" id="searchForm">
+            <div class="col-md-5">
+                <label class="form-label">Search</label>
+                <input type="text" name="q" id="searchInput" class="form-control"
+                       placeholder="Search inventory…" value="{{ search_term }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Filter by</label>
+                <select name="col" id="searchCol" class="form-select">
+                    <option value="">All Columns</option>
+                    <option value="name"     {% if search_col=='name' %}selected{% endif %}>Name</option>
+                    <option value="sku"      {% if search_col=='sku' %}selected{% endif %}>SKU</option>
+                    <option value="category" {% if search_col=='category' %}selected{% endif %}>Category</option>
+                    <option value="location" {% if search_col=='location' %}selected{% endif %}>Location</option>
+                    <option value="description" {% if search_col=='description' %}selected{% endif %}>Description</option>
+                    <option value="quantity" {% if search_col=='quantity' %}selected{% endif %}>Quantity</option>
+                    <option value="price"    {% if search_col=='price' %}selected{% endif %}>Price</option>
+                    <option value="custom"   {% if search_col=='custom' %}selected{% endif %}>Custom Fields</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Search
+                </button>
+            </div>
+            {% if search_term %}
+            <div class="col-md-2">
+                <a href="{{ url_for('inventory.list_items') }}" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-x-circle"></i> Clear
+                </a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Results count -->
+    <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:.75rem;">
+        Showing <strong style="color:var(--text-primary);">{{ items|length }}</strong> item(s)
+    </p>
+
+    <!-- Table -->
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" id="inventoryTable">
+                <thead>
+                    <tr>
+                        <th style="width:50px">Img</th>
+                        <th>Name</th>
+                        <th>SKU</th>
+                        <th>Category</th>
+                        <th>Qty</th>
+                        <th>Min</th>
+                        <th>Price</th>
+                        <th>Location</th>
+                        {% for col in custom_columns %}
+                        <th>{{ col.column_name }}</th>
+                        {% endfor %}
+                        {% if can_edit %}<th style="width:140px">Actions</th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for item in items %}
+                    <tr class="{% if item.quantity <= item.min_quantity %}critical-row{% endif %}">
+                        <td>
+                            {% if item.image_path %}
+                            <img src="{{ url_for('static', filename=item.image_path) }}"
+                                 alt="{{ item.name }}" class="img-thumbnail"
+                                 style="width:40px;height:40px;object-fit:cover;cursor:pointer"
+                                 data-bs-toggle="modal" data-bs-target="#imgModal"
+                                 onclick="showImage('{{ url_for('static', filename=item.image_path) }}', '{{ item.name }}')">
+                            {% else %}
+                            <span style="color:var(--text-muted);"><i class="bi bi-image"></i></span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong>{{ item.name }}</strong>
+                            {% if item.quantity <= item.min_quantity %}
+                            <span class="badge bg-danger ms-1" title="Below minimum stock">
+                                <i class="bi bi-exclamation-triangle-fill"></i> LOW
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td style="color:var(--text-secondary);font-family:monospace;font-size:.82rem;">{{ item.sku or '—' }}</td>
+                        <td><span class="badge bg-secondary">{{ item.category }}</span></td>
+                        <td>
+                            <span class="fw-bold
+                                {% if item.quantity <= item.min_quantity %}text-danger{% else %}text-success{% endif %}">
+                                {{ item.quantity }}
+                            </span>
+                        </td>
+                        <td style="color:var(--text-muted);">{{ item.min_quantity }}</td>
+                        <td>${{ "%.2f"|format(item.price) }}</td>
+                        <td>{{ item.location or '—' }}</td>
+                        {% for col in custom_columns %}
+                        <td>{{ item.custom_fields_parsed.get(col.column_name, '—') }}</td>
+                        {% endfor %}
+                        {% if can_edit %}
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a href="{{ url_for('inventory.edit_item', item_id=item.id) }}"
+                                   class="btn btn-sm btn-outline-warning" title="Edit">
+                                    <i class="bi bi-pencil-fill"></i>
+                                </a>
+                                <form method="POST"
+                                      action="{{ url_for('inventory.delete_item', item_id=item.id) }}"
+                                      class="d-inline delete-form">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            title="Delete">
+                                        <i class="bi bi-trash-fill"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                        {% endif %}
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="100%">
+                            <div class="empty-state">
+                                <i class="bi bi-inbox"></i>
+                                <p>No items found. {% if can_edit %}Try adding one!{% endif %}</p>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Image preview modal -->
+<div class="modal fade" id="imgModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imgModalLabel">Image</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="imgModalSrc" src="" alt="" class="img-fluid rounded">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

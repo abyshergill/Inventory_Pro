@@ -1,0 +1,85 @@
+
+{% extends "base.html" %}
+{% block title %}{% if user %}Edit{% else %}New{% endif %} User – InventoryPro{% endblock %}
+{% block content %}
+<div class="auth-wrapper py-5">
+    <div class="auth-card card border-0 shadow-lg">
+        <div class="card-body p-4">
+            <div class="auth-icon {% if user %}bg-primary{% else %}bg-success{% endif %} text-white mb-3">
+                <i class="bi bi-person-fill"></i>
+            </div>
+            <h3 class="card-title text-center mb-4">
+                {% if user %}Update User Profile{% else %}Create New User{% endif %}
+            </h3>
+            
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Username</label>
+                    <input type="text" name="username" class="form-control form-control-lg"
+                           value="{{ user.username if user else '' }}"
+                           required minlength="3">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Email</label>
+                    <input type="email" name="email" class="form-control form-control-lg"
+                           value="{{ user.email if user else '' }}"
+                           required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Role</label>
+                    <select name="role" class="form-select form-control-lg" required>
+                        <option value="admin" {% if user and user.role == 'admin' %}selected{% endif %}>Admin (Full Access)</option>
+                        <option value="editor" {% if user and user.role == 'editor' %}selected{% endif %}>Editor (Inventory CRUD)</option>
+                        <option value="viewer" {% if (user and user.role == 'viewer') or not user %}selected{% endif %}>Viewer (Read-only)</option>
+                    </select>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label fw-bold">
+                        {% if user %}Change Password (leave blank to keep current){% else %}Password{% endif %}
+                    </label>
+                    <input type="password" name="password" class="form-control form-control-lg"
+                           {% if not user %}required{% endif %} minlength="6">
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-save me-2"></i> {% if user %}Save Changes{% else %}Create User{% endif %}
+                    </button>
+                    <a href="{{ url_for('users.list_users') }}" class="btn btn-light btn-lg">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.auth-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 200px);
+}
+.auth-card {
+    width: 100%;
+    max-width: 450px;
+    border-radius: 1.25rem;
+}
+.auth-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    margin: 0 auto;
+}
+</style>
+{% endblock %}

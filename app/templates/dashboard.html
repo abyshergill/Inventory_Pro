@@ -1,0 +1,99 @@
+
+{% extends "base.html" %}
+{% block title %}Dashboard – InventoryPro{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h2><i class="bi bi-speedometer2"></i> Dashboard</h2>
+    </div>
+
+    <!-- Stats cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card stat-card bg-gradient-primary h-100">
+                <div class="card-body text-center py-4">
+                    <div class="stat-icon"><i class="bi bi-boxes"></i></div>
+                    <div class="stat-value">{{ total_items }}</div>
+                    <div class="stat-label">Total Items</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card stat-card h-100
+                {% if critical_items|length > 0 %}bg-gradient-danger{% else %}bg-gradient-success{% endif %}">
+                <div class="card-body text-center py-4">
+                    <div class="stat-icon"><i class="bi bi-exclamation-triangle"></i></div>
+                    <div class="stat-value">{{ critical_items|length }}</div>
+                    <div class="stat-label">Critical Low Stock</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card stat-card bg-gradient-info h-100">
+                <div class="card-body text-center py-4">
+                    <div class="stat-icon"><i class="bi bi-shield-check"></i></div>
+                    <div class="stat-value text-uppercase" style="font-size:1.5rem;">{{ current_user.role }}</div>
+                    <div class="stat-label">Your Role</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card stat-card bg-gradient-warning h-100">
+                <div class="card-body text-center py-4">
+                    <div class="stat-icon"><i class="bi bi-lightning-charge"></i></div>
+                    {% if can_edit %}
+                    <a href="{{ url_for('inventory.create_item') }}"
+                       class="btn btn-sm btn-light mt-1 fw-semibold">
+                        <i class="bi bi-plus-circle"></i> Add Item
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('inventory.list_items') }}"
+                       class="btn btn-sm btn-light mt-1 fw-semibold">
+                        <i class="bi bi-search"></i> Browse
+                    </a>
+                    {% endif %}
+                    <div class="stat-label mt-2">Quick Action</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Critical items alert table -->
+    {% if critical_items|length > 0 %}
+    <div class="card critical-alert-card">
+        <div class="card-header">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            <strong>Critical Stock Alert</strong> – Items at or below minimum quantity
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>SKU</th>
+                            <th>Quantity</th>
+                            <th>Min Qty</th>
+                            <th>Location</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for item in critical_items %}
+                        <tr class="critical-row">
+                            <td><strong>{{ item.name }}</strong></td>
+                            <td>{{ item.sku or '—' }}</td>
+                            <td>
+                                <span class="badge bg-danger fs-6">{{ item.quantity }}</span>
+                            </td>
+                            <td>{{ item.min_quantity }}</td>
+                            <td>{{ item.location or '—' }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

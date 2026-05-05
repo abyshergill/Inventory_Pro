@@ -1,0 +1,70 @@
+
+{% extends "base.html" %}
+{% block title %}Manage Columns – InventoryPro{% endblock %}
+{% block content %}
+<div class="container" style="max-width:700px">
+    <div class="page-header">
+        <h2><i class="bi bi-layout-three-columns"></i> Custom Columns</h2>
+    </div>
+
+    <!-- Add column -->
+    <div class="card mb-4">
+        <div class="card-header"><i class="bi bi-plus-circle me-1"></i> Add New Column</div>
+        <div class="card-body">
+            <form method="POST" class="row g-2 align-items-end">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="add">
+                <div class="col-md-5">
+                    <label class="form-label">Column Name</label>
+                    <input type="text" name="column_name" class="form-control"
+                           required placeholder="e.g. supplier">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Type</label>
+                    <select name="column_type" class="form-select">
+                        <option value="text">Text</option>
+                        <option value="number">Number</option>
+                        <option value="date">Date</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-plus-lg"></i> Add
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Existing columns -->
+    <div class="card">
+        <div class="card-header"><i class="bi bi-list-ul me-1"></i> Existing Columns</div>
+        {% if custom_columns|length > 0 %}
+        <ul class="list-group list-group-flush">
+            {% for col in custom_columns %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>
+                    <strong style="color:var(--text-primary);">{{ col.column_name }}</strong>
+                    <span class="badge bg-info ms-2">{{ col.column_type }}</span>
+                </span>
+                <form method="POST" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="column_id" value="{{ col.id }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                            onclick="return confirm('Remove this column?')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-columns-gap"></i>
+            <p>No custom columns defined yet. Add one above!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
