@@ -72,7 +72,7 @@
                     <label class="form-label">Price ($)</label>
                     <input type="number" name="price" class="form-control"
                            step="0.01" min="0"
-                           value="{{ item.price if item else 0 }}">
+                           value="{{ '%.2f'|format(item.price) if item else '0.00' }}">
                 </div>
             </div>
         </div>
@@ -83,7 +83,7 @@
                 {% if item and item.image_path %}
                 <div class="mb-3">
                     <img src="{{ url_for('static', filename=item.image_path) }}"
-                         alt="current" class="img-thumbnail" style="max-height:150px">
+                         alt="current" class="img-thumbnail img-preview">
                     <p style="font-size:.8rem;color:var(--text-muted);margin-top:.5rem;">
                         Upload a new file to replace the current image.
                     </p>
@@ -91,6 +91,7 @@
                 {% endif %}
                 <input type="file" name="image" class="form-control"
                        accept=".png,.jpg,.jpeg,.gif,.webp">
+                <div class="form-text">PNG, JPG, GIF or WebP.</div>
             </div>
         </div>
 

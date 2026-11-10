@@ -32,7 +32,7 @@ source venv/bin/activate
 
 ### 3. Install Dependencies
 ```bash
-pip install -r requiremtns.txt
+pip install -r requirements.txt
 ```
 
 ### 4. Configuration
@@ -113,7 +113,7 @@ The system is designed to be database-agnostic. To switch from SQLite to Postgre
 1.  **Update Config**: In `config/secrets.ini`, change `type = sqlite` to `type = postgresql` and uncomment the PostgreSQL connection details.
 2.  **Enable Driver**: In `app/database.py`, uncomment `import asyncpg` and the `PostgreSQLDatabase` class.
 3.  **Update Factory**: In `app/__init__.py`, uncomment the PostgreSQL initialization logic.
-4.  **Install Requirements**: Add `asyncpg` to your `requiremtns.txt`.
+4.  **Install Requirements**: Add `asyncpg` to your `requirements.txt`.
 
 ---
 

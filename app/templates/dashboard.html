@@ -14,7 +14,7 @@
                 <div class="card-body text-center py-4">
                     <div class="stat-icon"><i class="bi bi-boxes"></i></div>
                     <div class="stat-value">{{ total_items }}</div>
-                    <div class="stat-label">Total Items</div>
+                    <div class="stat-label">Items in {{ category_count }} categor{{ 'y' if category_count == 1 else 'ies' }}</div>
                 </div>
             </div>
         </div>
@@ -31,9 +31,9 @@
         <div class="col-sm-6 col-lg-3">
             <div class="card stat-card bg-gradient-info h-100">
                 <div class="card-body text-center py-4">
-                    <div class="stat-icon"><i class="bi bi-shield-check"></i></div>
-                    <div class="stat-value text-uppercase" style="font-size:1.5rem;">{{ current_user.role }}</div>
-                    <div class="stat-label">Your Role</div>
+                    <div class="stat-icon"><i class="bi bi-currency-dollar"></i></div>
+                    <div class="stat-value" style="font-size:1.75rem;">${{ "{:,.2f}".format(total_value) }}</div>
+                    <div class="stat-label">Stock Value &middot; {{ total_units }} units</div>
                 </div>
             </div>
         </div>
@@ -75,6 +75,7 @@
                             <th>Quantity</th>
                             <th>Min Qty</th>
                             <th>Location</th>
+                            {% if can_edit %}<th></th>{% endif %}
                         </tr>
                     </thead>
                     <tbody>
@@ -87,12 +88,41 @@
                             </td>
                             <td>{{ item.min_quantity }}</td>
                             <td>{{ item.location or '—' }}</td>
+                            {% if can_edit %}
+                            <td class="text-end">
+                                <a href="{{ url_for('inventory.edit_item', item_id=item.id) }}"
+                                   class="btn btn-sm btn-outline-warning" title="Restock / edit">
+                                    <i class="bi bi-pencil-fill"></i></a>
+                            </td>
+                            {% endif %}
                         </tr>
                     {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="empty-state">
+            <i class="bi bi-check-circle" style="color:var(--success);"></i>
+            <p>All stocked up – nothing is at or below its minimum quantity.</p>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if recent_items %}
+    <div class="card mt-4">
+        <div class="card-header"><i class="bi bi-clock-history me-1"></i> Recently updated</div>
+        <ul class="list-group list-group-flush">
+            {% for r in recent_items %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span><strong>{{ r.name }}</strong>
+                    <span class="badge bg-secondary ms-2">{{ r.category }}</span></span>
+                <span class="small" style="color:var(--text-muted);">{{ r.quantity }} in stock</span>
+            </li>
+            {% endfor %}
+        </ul>
     </div>
     {% endif %}
 </div>

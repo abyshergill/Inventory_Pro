@@ -4,7 +4,7 @@ The first registered user automatically becomes admin.
 """
 
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
-from flask_login import login_user, logout_user, login_required
+from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from .models import User
@@ -21,9 +21,9 @@ async def register():
         return redirect(url_for("auth.login"))
 
     if request.method == "POST":
-        username = request.form["username"].strip()
-        email = request.form["email"].strip().lower()
-        password = request.form["password"]
+        username = request.form.get("username", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
 
         if not username or not email or not password:
             flash("All fields are required.", "danger")
@@ -42,20 +42,26 @@ async def register():
                 "INSERT INTO users (username, email, password_hash, role) VALUES (?, ?, ?, ?)",
                 (username, email, pw_hash, role),
             )
-            flash(f"Admin account created! Please log in.", "success")
+            flash("Admin account created! Please log in.", "success")
             return redirect(url_for("auth.login"))
         except Exception as e:
-            flash(f"Error: {e}", "danger")
+            flash("Could not create the account. Username or email may already exist.", "danger")
             return redirect(url_for("auth.register"))
 
     return render_template("register.html")
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 async def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("inventory.dashboard"))
+    db = current_app.config["db"]
+    if request.method == "GET":
+        count = await db.fetch_one("SELECT COUNT(*) as cnt FROM users")
+        if count["cnt"] == 0:
+            return redirect(url_for("auth.register"))
     if request.method == "POST":
-        db = current_app.config["db"]
-        username = request.form["username"].strip()
-        password = request.form["password"]
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
 
         row = await db.fetch_one(
             "SELECT * FROM users WHERE username = ?", (username,)
@@ -71,7 +77,7 @@ async def login():
 
     return render_template("login.html")
 
-@auth_bp.route("/logout")
+@auth_bp.route("/logout", methods=["POST"])
 @login_required
 def logout():
     logout_user()

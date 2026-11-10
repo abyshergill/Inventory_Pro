@@ -82,12 +82,12 @@ def admin_client(client):
 
 @pytest.fixture()
 def viewer_client(client):
-    """Register admin first (so it exists), then register + login as viewer."""
-    # ensure admin exists first
-    client.post("/auth/register", data={
-        "username": "admin2",
-        "email": "admin2@test.com",
-        "password": "secret123",
+    """Admin creates a viewer account; the returned client is logged in as that viewer."""
+    _register_and_login(client, "admin", "admin@test.com", "secret123")
+    client.post("/users/new", data={
+        "username": "viewer", "email": "viewer@test.com",
+        "password": "viewerpass", "role": "viewer",
     })
-    _register_and_login(client, "viewer", "viewer@test.com", "viewerpass")
+    client.post("/auth/logout")
+    client.post("/auth/login", data={"username": "viewer", "password": "viewerpass"})
     return client

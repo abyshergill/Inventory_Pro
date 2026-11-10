@@ -28,32 +28,44 @@ document.addEventListener("DOMContentLoaded", () => {
     // ── Delete confirmation ──
     document.querySelectorAll(".delete-form").forEach(form => {
         form.addEventListener("submit", e => {
-            if (!confirm("Are you sure you want to delete this item? This cannot be undone.")) {
+            if (!confirm("Delete this item? This cannot be undone.")) {
                 e.preventDefault();
             }
         });
     });
 
-    // ── Live search debounce ──
+    // ── Live search (debounced form submit, keeps caret at end after reload) ──
     const searchInput = document.getElementById("searchInput");
     const searchCol = document.getElementById("searchCol");
+    const searchForm = document.getElementById("searchForm");
     let debounceTimer;
 
-    if (searchInput) {
+    if (searchInput && searchForm) {
+        if (searchInput.value) {
+            searchInput.focus();
+            searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+        }
         searchInput.addEventListener("input", () => {
             clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => liveSearch(), 500);
+            debounceTimer = setTimeout(() => searchForm.submit(), 600);
         });
-    }
-    if (searchCol) {
-        searchCol.addEventListener("change", () => liveSearch());
+        searchCol?.addEventListener("change", () => searchForm.submit());
     }
 
-    function liveSearch() {
-        const q = searchInput?.value || "";
-        const col = searchCol?.value || "";
-        document.getElementById("searchForm")?.submit();
-    }
+    // ── Image preview modal (data-attribute driven, no inline JS) ──
+    document.querySelectorAll("[data-preview-src]").forEach(img => {
+        img.addEventListener("click", () => {
+            document.getElementById("imgModalSrc").src = img.dataset.previewSrc;
+            document.getElementById("imgModalLabel").textContent = img.dataset.previewTitle || "Image";
+        });
+    });
+
+    // ── Confirm dialogs for any form with data-confirm ──
+    document.querySelectorAll("form[data-confirm]").forEach(form => {
+        form.addEventListener("submit", e => {
+            if (!confirm(form.dataset.confirm)) e.preventDefault();
+        });
+    });
 
     // ── Bootstrap form validation ──
     document.querySelectorAll(".needs-validation").forEach(form => {
@@ -67,25 +79,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // ── Auto-dismiss alerts after 5 seconds ──
-    document.querySelectorAll(".alert-dismissible").forEach(alert => {
+    document.querySelectorAll(".toast-stack .alert").forEach(alert => {
         setTimeout(() => {
             const btn = alert.querySelector(".btn-close");
             if (btn) btn.click();
         }, 5000);
     });
 
-    // ── Add active class to current nav link ──
-    const currentPath = window.location.pathname;
-    document.querySelectorAll(".navbar .nav-link").forEach(link => {
-        const href = link.getAttribute("href");
-        if (href && currentPath === href) {
-            link.classList.add("active");
-        } else if (href && currentPath.startsWith(href) && href !== "/") {
-            link.classList.add("active");
-        }
-    });
-
 
 });
-
-// ── Image modal helper ── function showImage(src, title) { document.getElementById("imgModalSrc").src = src; document.getElementById("imgModalLabel").textContent = title; }

@@ -5,6 +5,7 @@ Tests for inventory CRUD, search, column management, and role restrictions.
 import io
 
 def test_dashboard_requires_login(client):
+    client.post("/auth/register", data={"username": "a", "email": "a@test.com", "password": "password1"})
     resp = client.get("/inventory/", follow_redirects=True)
     assert b"Log In" in resp.data
 
@@ -178,3 +179,20 @@ def test_api_search_json(admin_client):
     assert resp.content_type == "application/json"
     json_data = resp.get_json()
     assert isinstance(json_data, list)
+
+def test_negative_quantity_clamped_and_form_kept_on_error(admin_client):
+    admin_client.post("/inventory/items/new", data={"name": "A", "sku": "S1", "quantity": "-5"})
+    admin_client.post("/inventory/items/new", data={"name": "B", "sku": "S1"})
+    resp = admin_client.post("/inventory/items/new", data={"name": "KeepMe", "sku": "S1"})
+    assert b"already exists" in resp.data
+    assert b"KeepMe" in resp.data  # form re-rendered with user input
+
+def test_search_treats_percent_literally(admin_client):
+    admin_client.post("/inventory/items/new", data={"name": "Plain"})
+    resp = admin_client.get("/inventory/items?q=%25")
+    assert b"Plain" not in resp.data
+
+def test_column_name_sanitised(admin_client):
+    admin_client.post("/inventory/columns", data={"action": "add", "column_name": "Bad Name!<x>", "column_type": "text"})
+    resp = admin_client.get("/inventory/columns")
+    assert b"bad_name_x" in resp.data

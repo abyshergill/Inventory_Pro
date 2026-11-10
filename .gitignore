@@ -1,0 +1,8 @@
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+config/secrets.ini
+data/*.db
+app/static/uploads/
+.DS_Store

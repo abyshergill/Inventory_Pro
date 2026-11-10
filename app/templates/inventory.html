@@ -31,6 +31,7 @@
                     <option value="description" {% if search_col=='description' %}selected{% endif %}>Description</option>
                     <option value="quantity" {% if search_col=='quantity' %}selected{% endif %}>Quantity</option>
                     <option value="price"    {% if search_col=='price' %}selected{% endif %}>Price</option>
+                    <option value="min_quantity" {% if search_col=='min_quantity' %}selected{% endif %}>Min Quantity</option>
                     <option value="custom"   {% if search_col=='custom' %}selected{% endif %}>Custom Fields</option>
                 </select>
             </div>
@@ -39,7 +40,7 @@
                     <i class="bi bi-search"></i> Search
                 </button>
             </div>
-            {% if search_term %}
+            {% if search_term or search_col %}
             <div class="col-md-2">
                 <a href="{{ url_for('inventory.list_items') }}" class="btn btn-outline-secondary w-100">
                     <i class="bi bi-x-circle"></i> Clear
@@ -69,7 +70,7 @@
                         <th>Price</th>
                         <th>Location</th>
                         {% for col in custom_columns %}
-                        <th>{{ col.column_name }}</th>
+                        <th>{{ col.column_name|replace("_"," ")|title }}</th>
                         {% endfor %}
                         {% if can_edit %}<th style="width:140px">Actions</th>{% endif %}
                     </tr>
@@ -80,12 +81,12 @@
                         <td>
                             {% if item.image_path %}
                             <img src="{{ url_for('static', filename=item.image_path) }}"
-                                 alt="{{ item.name }}" class="img-thumbnail"
-                                 style="width:40px;height:40px;object-fit:cover;cursor:pointer"
+                                 alt="{{ item.name }}" class="img-thumbnail thumb" loading="lazy"
                                  data-bs-toggle="modal" data-bs-target="#imgModal"
-                                 onclick="showImage('{{ url_for('static', filename=item.image_path) }}', '{{ item.name }}')">
+                                 data-preview-src="{{ url_for('static', filename=item.image_path) }}"
+                                 data-preview-title="{{ item.name }}">
                             {% else %}
-                            <span style="color:var(--text-muted);"><i class="bi bi-image"></i></span>
+                            <span class="thumb-empty"><i class="bi bi-image"></i></span>
                             {% endif %}
                         </td>
                         <td>
@@ -96,33 +97,30 @@
                             </span>
                             {% endif %}
                         </td>
-                        <td style="color:var(--text-secondary);font-family:monospace;font-size:.82rem;">{{ item.sku or '—' }}</td>
+                        <td class="mono">{{ item.sku or '—' }}</td>
                         <td><span class="badge bg-secondary">{{ item.category }}</span></td>
                         <td>
-                            <span class="fw-bold
-                                {% if item.quantity <= item.min_quantity %}text-danger{% else %}text-success{% endif %}">
-                                {{ item.quantity }}
-                            </span>
+                            <span class="qty-pill {% if item.quantity <= item.min_quantity %}qty-low{% else %}qty-ok{% endif %}">{{ item.quantity }}</span>
                         </td>
                         <td style="color:var(--text-muted);">{{ item.min_quantity }}</td>
-                        <td>${{ "%.2f"|format(item.price) }}</td>
+                        <td>${{ "{:,.2f}".format(item.price) }}</td>
                         <td>{{ item.location or '—' }}</td>
                         {% for col in custom_columns %}
-                        <td>{{ item.custom_fields_parsed.get(col.column_name, '—') }}</td>
+                        <td>{{ item.custom_fields_parsed.get(col.column_name) or '—' }}</td>
                         {% endfor %}
                         {% if can_edit %}
                         <td>
                             <div class="d-flex gap-1">
                                 <a href="{{ url_for('inventory.edit_item', item_id=item.id) }}"
-                                   class="btn btn-sm btn-outline-warning" title="Edit">
+                                   class="btn btn-sm btn-outline-warning" title="Edit" aria-label="Edit {{ item.name }}">
                                     <i class="bi bi-pencil-fill"></i>
                                 </a>
                                 <form method="POST"
                                       action="{{ url_for('inventory.delete_item', item_id=item.id) }}"
-                                      class="d-inline delete-form">
+                                      class="d-inline" data-confirm="Delete &quot;{{ item.name }}&quot;? This cannot be undone.">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="btn btn-sm btn-outline-danger"
-                                            title="Delete">
+                                            title="Delete" aria-label="Delete {{ item.name }}">
                                         <i class="bi bi-trash-fill"></i>
                                     </button>
                                 </form>

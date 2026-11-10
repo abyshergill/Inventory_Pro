@@ -18,7 +18,7 @@ def main():
 
     app = create_app(config_path=args.config)
     app.run(
-        host=app.config.get("HOST", "0.0.0.0"),
+        host=app.config.get("HOST", "127.0.0.1"),
         port=int(app.config.get("PORT", 5000)),
         debug=app.config.get("DEBUG", False),
     )

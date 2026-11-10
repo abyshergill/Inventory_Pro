@@ -12,7 +12,12 @@ def test_register_page_loads(client):
     assert resp.status_code == 200
     assert b"Register" in resp.data
 
+def test_login_redirects_to_register_on_fresh_install(client):
+    resp = client.get("/auth/login", follow_redirects=True)
+    assert b"Create your account" in resp.data
+
 def test_login_page_loads(client):
+    client.post("/auth/register", data={"username": "a", "email": "a@test.com", "password": "password1"})
     resp = client.get("/auth/login")
     assert resp.status_code == 200
     assert b"Log In" in resp.data
@@ -25,19 +30,12 @@ def test_register_first_user_becomes_admin(client):
     }, follow_redirects=True)
     assert b"admin" in resp.data.lower()
 
-def test_register_second_user_becomes_viewer(client):
-    # First user = admin
-    client.post("/auth/register", data={
-        "username": "u1",
-        "email": "u1@test.com",
-        "password": "password1",
-    })
+def test_registration_closed_after_first_user(client):
+    client.post("/auth/register", data={"username": "u1", "email": "u1@test.com", "password": "password1"})
     resp = client.post("/auth/register", data={
-        "username": "u2",
-        "email": "u2@test.com",
-        "password": "password2",
+        "username": "u2", "email": "u2@test.com", "password": "password2",
     }, follow_redirects=True)
-    assert b"viewer" in resp.data.lower()
+    assert b"Registration is disabled" in resp.data
 
 def test_login_valid_credentials(client):
     client.post("/auth/register", data={
@@ -59,7 +57,7 @@ def test_login_invalid_credentials(client):
     assert b"Invalid" in resp.data
 
 def test_logout(admin_client):
-    resp = admin_client.get("/auth/logout", follow_redirects=True)
+    resp = admin_client.post("/auth/logout", follow_redirects=True)
     assert b"logged out" in resp.data.lower() or b"Log In" in resp.data
 
 def test_short_password_rejected(client):
@@ -70,15 +68,35 @@ def test_short_password_rejected(client):
     }, follow_redirects=True)
     assert b"at least 6" in resp.data.lower() or b"required" in resp.data.lower()
 
-def test_duplicate_username_rejected(client):
-    client.post("/auth/register", data={
-        "username": "dupeuser",
-        "email": "dupe1@test.com",
-        "password": "password1",
-    })
-    resp = client.post("/auth/register", data={
-        "username": "dupeuser",
-        "email": "dupe2@test.com",
-        "password": "password2",
+def test_duplicate_username_rejected(admin_client):
+    data = {"username": "dupe", "email": "d1@test.com", "password": "password1", "role": "viewer"}
+    admin_client.post("/users/new", data=data)
+    data["email"] = "d2@test.com"
+    resp = admin_client.post("/users/new", data=data, follow_redirects=True)
+    assert b"already taken" in resp.data
+
+def test_invalid_role_rejected(admin_client):
+    resp = admin_client.post("/users/new", data={
+        "username": "x", "email": "x@test.com", "password": "password1", "role": "superuser",
     }, follow_redirects=True)
-    assert b"already taken" in resp.data.lower() or b"already" in resp.data.lower()
+    assert b"Invalid role" in resp.data
+
+def test_cannot_demote_or_delete_last_admin(admin_client):
+    resp = admin_client.post("/users/1/edit", data={
+        "username": "admin", "email": "admin@test.com", "role": "viewer",
+    }, follow_redirects=True)
+    assert b"last remaining admin" in resp.data
+    resp = admin_client.post("/users/1/delete", follow_redirects=True)
+    assert b"cannot delete your own" in resp.data.lower()
+
+def test_edit_user_email_clash(admin_client):
+    admin_client.post("/users/new", data={"username": "b", "email": "b@test.com",
+                                          "password": "password1", "role": "viewer"})
+    resp = admin_client.post("/users/2/edit", data={"username": "b", "email": "admin@test.com",
+                                                    "role": "viewer"}, follow_redirects=True)
+    assert b"already taken" in resp.data
+
+def test_404_page_renders_for_logged_in_user(admin_client):
+    resp = admin_client.get("/nope")
+    assert resp.status_code == 404
+    assert b"Page not found" in resp.data

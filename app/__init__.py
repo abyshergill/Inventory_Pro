@@ -20,6 +20,10 @@ def create_app(config_path: str = "config/secrets.ini") -> Flask:
     # ── Load config from INI ──
     cfg = load_config(config_path)
     app.config.update(cfg)
+    if app.config["SECRET_KEY"] in ("dev-fallback-key", "CHANGE-ME-to-a-long-random-string"):
+        import warnings
+        warnings.warn("Insecure SECRET_KEY in use - set a long random value in secrets.ini")
+    app.config.setdefault("SESSION_COOKIE_SAMESITE", "Lax")
 
     # ── Ensure directories exist ──
     db_dir = os.path.dirname(app.config["DATABASE_PATH"])
@@ -65,6 +69,24 @@ def create_app(config_path: str = "config/secrets.ini") -> Flask:
     app.register_blueprint(auth_bp)
     app.register_blueprint(inv_bp)
     app.register_blueprint(user_bp)
+
+    # ── Error pages ──
+    from flask import render_template
+
+    @app.errorhandler(403)
+    def forbidden(_e):
+        return render_template("error.html", code=403, title="Access denied",
+                               message="You don't have permission to view this page."), 403
+
+    @app.errorhandler(404)
+    def not_found(_e):
+        return render_template("error.html", code=404, title="Page not found",
+                               message="The page you are looking for doesn't exist."), 404
+
+    @app.errorhandler(413)
+    def too_large(_e):
+        return render_template("error.html", code=413, title="File too large",
+                               message="The uploaded file exceeds the size limit."), 413
 
     # ── Root route ──
     from flask import redirect, url_for

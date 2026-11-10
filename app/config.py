@@ -17,6 +17,12 @@ def load_config(config_path: str = "config/secrets.ini") -> dict:
     parser = configparser.ConfigParser()
     parser.read(config_path)
 
+    # Relative paths in the INI resolve against the project root, not the CWD
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    def _abs(path: str) -> str:
+        return path if os.path.isabs(path) else os.path.join(root, path)
+
     db_type = parser.get("database", "type", fallback="sqlite")
     sqlite_path = parser.get("database", "sqlite_path", fallback="data/inventory.db")
 
@@ -35,12 +41,12 @@ def load_config(config_path: str = "config/secrets.ini") -> dict:
     return {
         "SECRET_KEY": parser.get("app", "secret_key", fallback="dev-fallback-key"),
         "DEBUG": parser.getboolean("app", "debug", fallback=False),
-        "HOST": parser.get("app", "host", fallback="0.0.0.0"),
+        "HOST": parser.get("app", "host", fallback="127.0.0.1"),
         "PORT": parser.getint("app", "port", fallback=5000),
         "DB_TYPE": db_type,
-        "DATABASE_PATH": sqlite_path,
+        "DATABASE_PATH": _abs(sqlite_path),
         # "POSTGRESQL_DSN": postgresql_dsn,   # uncomment for PostgreSQL
-        "UPLOAD_FOLDER": upload_folder,
+        "UPLOAD_FOLDER": _abs(upload_folder),
         "MAX_CONTENT_LENGTH": max_size_mb * 1024 * 1024,
-        "ALLOWED_EXTENSIONS": set(allowed_ext.split(",")),
+        "ALLOWED_EXTENSIONS": {e.strip().lower() for e in allowed_ext.split(",") if e.strip()},
     }
